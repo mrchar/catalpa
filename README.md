@@ -144,9 +144,9 @@ task                = WROD [suffix] *(CRLF sub-task)
 
 sub-task            = +SP WROD [suffix]
          
-suffix              = +label / +label+SP
+suffix              = +label / +label +SP
 
-label               = +SP(tag / member / ddl / begin / end / phase)
+label               = +SP(tag / member / ddl / duration / begin / end / phase)
 
 tag                 = ("tag:" / "@") *SP WROD
 
@@ -164,7 +164,7 @@ duration            = "<"TIME[, *SP [TIME]] ">"
 
 WROD                = VCHAR / 2*VCHAR / VCHAR +(SP / VCHAR) VCHAR; 空格和可视字符
 TIME                = 4DIGIT "/" 1*2DIGIT "/" 1*2DIGIT; 时间格式
-VCHAR               = %x21-%x7E / %x80-%xFFFFFFFF; 可视字符
+VCHAR               = %x21-7E / %x80-FFFFFFFF; 可视字符
 DIGIT               = %x30-39; 数字(0-9)
 SP                  = %x20; 空格
 
