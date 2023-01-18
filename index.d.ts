@@ -1,0 +1,1 @@
+declare function parse(path:string):any;
