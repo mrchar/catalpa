@@ -1,3 +1,3 @@
-declare module parser {
+declare module "*.jison" {
     export function parse(script: string): any
 }

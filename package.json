@@ -2,7 +2,14 @@
   "name": "backlog",
   "private": true,
   "version": "0.0.0",
+  "description": "A simple markup language for Backlog",
   "type": "module",
+  "packageManager": "pnpm@7.25.0",
+  "keywords": [
+    "backlog",
+    "markdown",
+    "table"
+  ],
   "files": [
     "dist",
     "index.d.ts"
@@ -25,8 +32,13 @@
   "devDependencies": {
     "@types/node": "^18.11.18",
     "@vitejs/plugin-vue": "^4.0.0",
+    "autoprefixer": "^10.4.13",
     "jison": "^0.4.18",
+    "postcss": "^8.4.21",
     "typescript": "^4.9.3",
+    "unplugin-auto-import": "^0.12.1",
+    "unplugin-icons": "^0.15.1",
+    "unplugin-vue-components": "^0.22.12",
     "vite": "^4.0.0",
     "vue-tsc": "^1.0.11"
   }

@@ -21,8 +21,8 @@
     "src/**/*.d.ts",
     "src/**/*.tsx",
     "src/**/*.vue",
-    "packages/parser/**/*.ts",
-    "packages/parser/**/*.d.ts"
+    "packages/**/*.ts",
+    "packages/**/*.d.ts"
   ],
   "references": [
     {
