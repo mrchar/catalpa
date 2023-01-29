@@ -12,7 +12,8 @@ const result = computed(() => {
     const parsed = parser.parse(script.value)
     return JSON.stringify(parsed)
   } catch (e) {
-    return e
+    alert((e as Error).message)
+    return ""
   }
 })
 
