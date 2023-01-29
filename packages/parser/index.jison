@@ -14,7 +14,9 @@
 %% /* language grammar */
 
 backlog
-    : task_list
+    : EOF
+    { return {tasks:[]};}
+    | task_list
     { return {tasks:$task_list}; }
     ;
 
