@@ -2,11 +2,12 @@
 import {computed, ref} from "vue"
 import parser from "../../packages/parser/index.jison"
 
-const script = ref<string>("1+1")
+const script = ref<string>("task description")
 
 const result = computed(() => {
   try {
-    return parser.parse(script.value)
+    const parsed = parser.parse(script.value)
+    return JSON.stringify(parsed)
   } catch (e) {
     return e
   }

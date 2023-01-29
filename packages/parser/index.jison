@@ -1,59 +1,37 @@
-/* description: Parses end executes mathematical expressions. */
+/* description: A simple markup language for Backlog. */
 
 /* lexical grammar */
 %lex
 
 %%
-\s+                   /* skip whitespace */
-[0-9]+("."[0-9]+)?\b  return 'NUMBER';
-"*"                   return '*';
-"/"                   return '/';
-"-"                   return '-';
-"+"                   return '+';
-"^"                   return '^';
-"("                   return '(';
-")"                   return ')';
-"PI"                  return 'PI';
-"E"                   return 'E';
-<<EOF>>               return 'EOF';
+.+                    {return 'WORD';}
+<<EOF>>               {return 'EOF';}
 
 /lex
 
 /* operator associations and precedence */
 
-%left '+' '-'
-%left '*' '/'
-%left '^'
-%left UMINUS
-
-%start expressions
-
 %% /* language grammar */
 
-expressions
-    : e EOF
-        {console.log($1); return $1;}
+backlog
+    : task_list
+    { return {tasks:$task_list}; }
     ;
 
-e
-    : e '+' e
-        {$$ = $1+$3;}
-    | e '-' e
-        {$$ = $1-$3;}
-    | e '*' e
-        {$$ = $1*$3;}
-    | e '/' e
-        {$$ = $1/$3;}
-    | e '^' e
-        {$$ = Math.pow($1, $3);}
-    | '-' e %prec UMINUS
-        {$$ = -$2;}
-    | '(' e ')'
-        {$$ = $2;}
-    | NUMBER
-        {$$ = Number(yytext);}
-    | E
-        {$$ = Math.E;}
-    | PI
-        {$$ = Math.PI;}
+task_list
+    : task_list task
+    { $$ = $task_list; $$.push($task)}
+    | task
+    { $$ = [$task]}
+    ;
+
+task
+    : task_description EOL
+    | task_description EOF
+    { $$ = {description: $task_description} }
+    ;
+
+task_description
+    : WORD
+    { $$ = $WORD }
     ;
