@@ -10,9 +10,9 @@ const script = ref<string>("")
 const result = computed(() => {
   try {
     const parsed = parser.parse(script.value)
-    return JSON.stringify(parsed)
+    return JSON.stringify(parsed, null, 2)
   } catch (e) {
-    alert((e as Error).message)
+    console.error(e)
     return ""
   }
 })
