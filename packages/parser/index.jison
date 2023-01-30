@@ -1,29 +1,111 @@
 /* description: A simple markup language for Backlog. */
 
+%{
+/**
+* 根据子任务的缩进深度，处理子任务的从属关系
+*/
+function sortSubTaskList(subTaskList){
+    const srcTaskList = subTaskList;
+    const dstTaskList = [];
+
+    /**
+     * 向前查找遇到的第一个深度更小的子任务的地址
+     * 如果没有找到，则返回-1
+     */
+    function findParentIndex(index){
+        for(let j = index-1; j >=0; j--){
+            if(srcTaskList[index].depth > srcTaskList[j].depth){
+                return j;
+            }
+        }
+
+        return -1;
+    }
+
+    for(let i = 0; i < srcTaskList.length; i++){
+        if(dstTaskList.length === 0){
+            dstTaskList.push(srcTaskList[i]);
+        }else{
+            const parentIndex = findParentIndex(i);
+            if(parentIndex>=0){
+                if(srcTaskList[parentIndex].children==null){
+                   srcTaskList[parentIndex].children = [];
+                }
+
+                srcTaskList[parentIndex].children.push(srcTaskList[i]);
+            }else{
+                dstTaskList.push(srcTaskList[i]);
+            }
+        }
+    }
+
+    return dstTaskList;
+}
+
+/**
+* 对标记列表进行归类处理
+*/
+function parseLabels(labels){
+    const parsed = {}
+
+    for(const label of labels){
+        switch(label.key){
+            case "tag":
+                if(parsed.tags == null) parsed.tags = [];
+                parsed.tags.push(label.value);
+                break;
+            case "member":
+                if(parsed.members == null) parsed.members = [];
+                parsed.members.push(label.value);
+                break;
+            case "ddl":
+                parsed.ddl = label.value;
+                break;
+            case "begin":
+                parsed.begin = label.value;
+                break;
+            case "end":
+                parsed.end = label.value;
+                break;
+            case "phase":
+                parsed.phase = label.value;
+                break;
+            case "begin_end":
+                if (label.value[0]) parsed.begin = label.value[0];
+                if (label.value[1]) parsed.end = label.value[1];
+                break;
+        }
+    }
+
+    return parsed;
+}
+%}
+
 /* lexical grammar */
 %lex
 
 %%
-[ \t]+"tag:"                                {return 'TAG_LABEL';}
-[ \t]+"#"                                   {return 'TAG_LABEL';}
-[ \t]+"member:"                             {return 'MEMBER_LABEL';}
-[ \t]+"@"                                   {return 'MEMBER_LABEL';}
-[ \t]+"ddl:"                                {return 'DDL_LABEL';}
-[ \t]+"!"                                   {return 'DDL_LABEL';}
-[ \t]+"begin:"                              {return 'BEGIN_LABEL';}
-[ \t]+"^"                                   {return 'BEGIN_LABEL';}
-[ \t]+"end:"                                {return 'END_LABEL';}
-[ \t]+"$"                                   {return 'END_LABEL';}
-[ \t]+"phase:"                              {return 'PHASE_LABEL';}
-[ \t]+":"                                   {return 'PHASE_LABEL';}
-[ \t]+"["                                   {return 'BEGIN_END_LEFT_LABEL';}
-"]"                                         {return 'BEGIN_END_RIGHT_LABEL';}
-(\d{2}|\d{4})\/(\d{1}|\d{1,2})\/(\d{1,2})   {return 'TIME';}
-","                                         {return 'COMMA';}
-[ \t]+                {return 'SPACES';}
-[^\s]+                {return 'NON_SPACES';}
-\n                    {return 'EOL';}
-<<EOF>>               {return 'EOF';}
+\-{3}                                                           { return 'FOREWORD_LABEL'; }
+"title:"                                                        { return 'FOREWORD_TITLE_LABEL'; }
+"tags:"                                                         { return 'FOREWORD_TAGS_LABEL'; }
+"members:"                                                      { return 'FOREWORD_MEMBERS_LABEL'; }
+"phases:"                                                       { return 'FOREWORD_PHASES_LABEL'; }
+[ \t]+("tag:"|"#")                                              { return 'TAG_LABEL'; }
+[ \t]+("member:"|"@")                                           { return 'MEMBER_LABEL'; }
+[ \t]+("ddl:"|"!")                                              { return 'DDL_LABEL'; }
+[ \t]+("begin:"|"^")                                            { return 'BEGIN_LABEL'; }
+[ \t]+("end:"|"$")                                              { return 'END_LABEL'; }
+[ \t]+("phase:"|":")                                            { return 'PHASE_LABEL'; }
+[ \t]+"["                                                       { return 'BEGIN_END_LEFT_LABEL'; }
+"]"                                                             { return 'BEGIN_END_RIGHT_LABEL'; }
+(\d{2}|\d{4})\/\d{1,2}\/\d{1,2}                                 { return 'DATE'; }
+(\d{2}|\d{4})\-\d{1,2}\-\d{1,2}                                 { return 'DATE'; }
+","                                                             { return 'COMMA'; }
+" "+                                                            { return 'INDENT'; }
+[ \t]+                                                          { return 'SPACES'; }
+[^\s]+                                                          { return 'NON_SPACES'; }
+\n                                                              { return 'EOL'; }
+<<EOF>>                                                         { return 'EOF'; }
 
 /lex
 
@@ -35,9 +117,61 @@
 
 backlog
     : EOF
-    { return {tasks:[]}; }
+    { $$ = {}; return $$; }
+    | foreword
+    { $$ = $foreword; return $$; }
     | task_list
-    { return {tasks:$task_list}; }
+    { $$ = {}; $$.tasks = $task_list; return $$; }
+    | foreword task_list
+    { $$ = $foreword; $$.tasks = $task_list; return $$; }
+    ;
+
+foreword
+    : FOREWORD_LABEL EOL foreword_content FOREWORD_LABEL EOL
+    { $$ = $foreword_content; }
+    | FOREWORD_LABEL EOL foreword_content FOREWORD_LABEL EOF
+    { $$ = $foreword_content; }
+    | FOREWORD_LABEL EOL foreword_content FOREWORD_LABEL EOL EOF
+    { $$ = $foreword_content; }
+    ;
+
+foreword_content
+    : foreword_title
+    { $$ = {title:$foreword_title};}
+    | foreword_title foreword_tags
+    { $$ = {title:$foreword_title, tags: $foreword_tags};}
+    | foreword_title foreword_tags foreword_members
+    { $$ = {title:$foreword_title, tags: $foreword_tags, members: $foreword_members};}
+    | foreword_title foreword_tags foreword_members foreword_phases
+    { $$ = {title:$foreword_title, tags: $foreword_tags, members: $foreword_members, phases: $foreword_phases};}
+    ;
+
+foreword_title
+    : FOREWORD_TITLE_LABEL NON_SPACES EOL
+    { $$ = $NON_SPACES; }
+    | FOREWORD_TITLE_LABEL NON_SPACES SPACES NON_SPACES EOL
+    { $$ = $NON_SPACES1+$SPACES+$NON_SPACES2; }
+    ;
+
+foreword_tags
+    : FOREWORD_TAGS_LABEL NON_SPACES EOL
+    { $$ = $NON_SPACES.split(",").map(x=>x.trim()); }
+    | FOREWORD_TAGS_LABEL NON_SPACES SPACES NON_SPACES EOL
+    { $$ = ($NON_SPACES1+$SPACES+$NON_SPACES2).split(",").map(x=>x.trim()); }
+    ;
+
+foreword_members
+    : FOREWORD_MEMBERS_LABEL NON_SPACES EOL
+    { $$ = $NON_SPACES.split(",").map(x=>x.trim()); }
+    | FOREWORD_MEMBERS_LABEL NON_SPACES SPACES NON_SPACES EOL
+    { $$ = ($NON_SPACES1+$SPACES+$NON_SPACES2).split(",").map(x=>x.trim()); }
+    ;
+
+foreword_phases
+    : FOREWORD_PHASES_LABEL NON_SPACES EOL
+    { $$ = $NON_SPACES.split(",").map(x=>x.trim()); }
+    | FOREWORD_PHASES_LABEL NON_SPACES SPACES NON_SPACES EOL
+    { $$ = ($NON_SPACES1+$SPACES+$NON_SPACES2).split(",").map(x=>x.trim()); }
     ;
 
 task_list
@@ -49,55 +183,21 @@ task_list
 
 task
     : task_content
+    { $$ = $task_content; }
     | task_content sub_task_list
-    {
-        const srcTaskList = $sub_task_list;
-        const dstTaskList = [];
-
-        /**
-         * 向前查找遇到的第一个深度更小的子任务的地址
-         * 如果没有找到，则返回-1
-         */
-        function findParentIndex(index){
-            for(let j = index-1; j >=0; j--){
-                if(srcTaskList[index].depth > srcTaskList[j].depth){
-                    return j;
-                }
-            }
-
-            return -1;
-        }
-
-        for(let i = 0; i < srcTaskList.length; i++){
-            if(dstTaskList.length === 0){
-                dstTaskList.push(srcTaskList[i]);
-            }else{
-                const parentIndex = findParentIndex(i);
-                if(parentIndex>=0){
-                    if(srcTaskList[parentIndex].children==null){
-                       srcTaskList[parentIndex].children = [];
-                    }
-                    srcTaskList[parentIndex].children.push(srcTaskList[i]);
-                }else{
-                    dstTaskList.push(srcTaskList[i]);
-                }
-            }
-        }
-
-        $$ = {...$task_content, children: dstTaskList};
-    }
+    { $$ = $task_content; $$.children = sortSubTaskList($sub_task_list); }
     ;
 
 sub_task_list
     : sub_task_list sub_task
     { $$ = $sub_task_list; $$.push($sub_task); }
     | sub_task
-    { $$ = [$sub_task];}
+    { $$ = [$sub_task]; }
     ;
 
 sub_task
-    : SPACES task_content
-    { $$ = $task_content }
+    : INDENT task_content
+    { $$ = $task_content; $$.depth = $INDENT.length; }
     ;
 
 task_content
@@ -108,109 +208,16 @@ task_content
     | task_description EOL EOF
     { $$ = {description: $task_description} }
     | task_description label_list EOL
-    {
-        $$ = {description: $task_description};
-        for(const label of $label_list){
-            switch(label.key){
-                case "tag":
-                    if($$.tags == null) $$.tags = [];
-                    $$.tags.push(label.value);
-                    break;
-                case "member":
-                    if($$.members == null) $$.members = [];
-                    $$.members.push(label.value);
-                    break;
-                case "ddl":
-                    $$.ddl = label.value;
-                    break;
-                case "begin":
-                    $$.begin = label.value;
-                    break;
-                case "end":
-                    $$.end = label.value;
-                    break;
-                case "phase":
-                    $$.phase = label.value;
-                    break;
-                case "begin_end":
-                    console.log(label)
-                    if (label.value[0]) $$.begin = label.value[0];
-                    if (label.value[1]) $$.end = label.value[1];
-                    break;
-            }
-        }
-    }
+    { $$ = {description: $task_description, ...parseLabels($label_list)}; }
     | task_description label_list EOF
-    {
-        $$ = {description: $task_description};
-        for(const label of $label_list){
-            switch(label.key){
-                case "tag":
-                    if($$.tags == null) $$.tags = [];
-                    $$.tags.push(label.value);
-                    break;
-                case "member":
-                    if($$.members == null) $$.members = [];
-                    $$.members.push(label.value);
-                    break;
-                case "ddl":
-                    $$.ddl = label.value;
-                    break;
-                case "begin":
-                    $$.begin = label.value;
-                    break;
-                case "end":
-                    $$.end = label.value;
-                    break;
-                case "phase":
-                    $$.phase = label.value;
-                    break;
-                case "begin_end":
-                    console.log(label)
-                    if (label.value[0]) $$.begin = label.value[0];
-                    if (label.value[1]) $$.end = label.value[1];
-                    break;
-            }
-        }
-    }
+    { $$ = {description: $task_description, ...parseLabels($label_list)}; }
     | task_description label_list EOL EOF
-    {
-            $$ = {description: $task_description};
-            for(const label of $label_list){
-                switch(label.key){
-                    case "tag":
-                        if($$.tags == null) $$.tags = [];
-                        $$.tags.push(label.value);
-                        break;
-                    case "member":
-                        if($$.members == null) $$.members = [];
-                        $$.members.push(label.value);
-                        break;
-                    case "ddl":
-                        $$.ddl = label.value;
-                        break;
-                    case "begin":
-                        $$.begin = label.value;
-                        break;
-                    case "end":
-                        $$.end = label.value;
-                        break;
-                    case "phase":
-                        $$.phase = label.value;
-                        break;
-                    case "begin_end":
-                        console.log(label)
-                        if (label.value[0]) $$.begin = label.value[0];
-                        if (label.value[1]) $$.end = label.value[1];
-                        break;
-                }
-            }
-        }
+    { $$ = {description: $task_description, ...parseLabels($label_list)}; }
     ;
 
 task_description
     : NON_SPACES
-    { $$ = $NON_SPACES; }
+    { $$ = $NON_SPACES; /*NON_SPACES 不能只包含DATE内容，否则会被识别为DATE*/}
     | NON_SPACES SPACES NON_SPACES
     { $$ =  $1+$2+$3}
     ;
@@ -254,18 +261,18 @@ member
     ;
 
 ddl
-    : DDL_LABEL TIME
-    { $$ = $TIME; }
+    : DDL_LABEL DATE
+    { $$ = $DATE; }
     ;
 
 begin
-    : BEGIN_LABEL TIME
-    { $$ = $TIME; }
+    : BEGIN_LABEL DATE
+    { $$ = $DATE; }
     ;
 
 end
-    : END_LABEL TIME
-    { $$ = $TIME; }
+    : END_LABEL DATE
+    { $$ = $DATE; }
     ;
 
 phase
@@ -276,14 +283,14 @@ phase
     ;
 
 begin_end
-    : BEGIN_END_LEFT_LABEL TIME BEGIN_END_RIGHT_LABEL
-    { $$ = [$2]; }
-    | BEGIN_END_LEFT_LABEL TIME COMMA BEGIN_END_RIGHT_LABEL
-    { $$ = [$2]; }
-    | BEGIN_END_LEFT_LABEL TIME COMMA SPACES BEGIN_END_RIGHT_LABEL
-    { $$ = [$2]; }
-    | BEGIN_END_LEFT_LABEL TIME COMMA TIME BEGIN_END_RIGHT_LABEL
-    { $$ = [$2, $4]; }
-    | BEGIN_END_LEFT_LABEL TIME COMMA SPACES TIME BEGIN_END_RIGHT_LABEL
-    { $$ = [$2, $5]; }
+    : BEGIN_END_LEFT_LABEL DATE BEGIN_END_RIGHT_LABEL
+    { $$ = [$DATE]; }
+    | BEGIN_END_LEFT_LABEL DATE COMMA BEGIN_END_RIGHT_LABEL
+    { $$ = [$DATE]; }
+    | BEGIN_END_LEFT_LABEL DATE COMMA SPACES BEGIN_END_RIGHT_LABEL
+    { $$ = [$DATE]; }
+    | BEGIN_END_LEFT_LABEL DATE COMMA DATE BEGIN_END_RIGHT_LABEL
+    { $$ = [$DATE1, $DATE2]; }
+    | BEGIN_END_LEFT_LABEL DATE COMMA SPACES DATE BEGIN_END_RIGHT_LABEL
+    { $$ = [$DATE1, $DATE2]; }
     ;
