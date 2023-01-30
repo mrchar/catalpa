@@ -7,12 +7,14 @@ import parser from "../../packages/parser/index.jison"
 
 const script = ref<string>("")
 
+const error = ref<string>("")
+
 const result = computed(() => {
   try {
     const parsed = parser.parse(script.value)
     return JSON.stringify(parsed, null, 2)
   } catch (e) {
-    console.error(e)
+    error.value = (e as Error).message
     return ""
   }
 })
@@ -25,13 +27,20 @@ const result = computed(() => {
         v-model="script"
         :autofocus="true"
         :extensions="[oneDark]"
-        :style="{width: '50em', height: '30em'}"
+        :style="{width: '80em', height: '30em'}"
         placeholder="从这里开始编写Backlog..."
     />
     <codemirror
+        v-if="result"
         :model-value="result"
         :extensions="[json(),oneDark]"
-        :style="{width: '50em', height: '30em'}"
+        :style="{width: '80em', height: '30em'}"
+    />
+    <codemirror
+        v-else
+        :model-value="error"
+        :extensions="[oneDark]"
+        :style="{width: '80em', height: '30em'}"
     />
   </div>
 </template>
@@ -40,10 +49,5 @@ const result = computed(() => {
 div.container {
   display: flex;
   gap: 1em;
-}
-
-codemirror {
-  width: 100em;
-  height: 50em;
 }
 </style>

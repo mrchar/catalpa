@@ -4,17 +4,22 @@
 %lex
 
 %%
-[ \t]+"tag:"          {return 'TAG_LABEL';}
-[ \t]+"#"             {return 'TAG_LABEL';}
-[ \t]+"member:"       {return 'MEMBER_LABEL';}
-[ \t]+"@"             {return 'MEMBER_LABEL';}
-[ \t]+"ddl:"          {return 'DDL_LABEL';}
-[ \t]+"begin:"        {return 'BEGIN_LABEL';}
-[ \t]+">"             {return 'BEGIN_LABEL';}
-[ \t]+"end:"          {return 'END_LABEL';}
-[ \t]+"<"             {return 'END_LABEL';}
-[ \t]+"phase:"        {return 'PHASE_LABEL';}
-[ \t]+":"             {return 'PHASE_LABEL';}
+[ \t]+"tag:"                                {return 'TAG_LABEL';}
+[ \t]+"#"                                   {return 'TAG_LABEL';}
+[ \t]+"member:"                             {return 'MEMBER_LABEL';}
+[ \t]+"@"                                   {return 'MEMBER_LABEL';}
+[ \t]+"ddl:"                                {return 'DDL_LABEL';}
+[ \t]+"!"                                   {return 'DDL_LABEL';}
+[ \t]+"begin:"                              {return 'BEGIN_LABEL';}
+[ \t]+"^"                                   {return 'BEGIN_LABEL';}
+[ \t]+"end:"                                {return 'END_LABEL';}
+[ \t]+"$"                                   {return 'END_LABEL';}
+[ \t]+"phase:"                              {return 'PHASE_LABEL';}
+[ \t]+":"                                   {return 'PHASE_LABEL';}
+[ \t]+"["                                   {return 'BEGIN_END_LEFT_LABEL';}
+"]"                                         {return 'BEGIN_END_RIGHT_LABEL';}
+(\d{2}|\d{4})\/(\d{1}|\d{1,2})\/(\d{1,2})   {return 'TIME';}
+","                                         {return 'COMMA';}
 [ \t]+                {return 'SPACES';}
 [^\s]+                {return 'NON_SPACES';}
 \n                    {return 'EOL';}
@@ -24,28 +29,27 @@
 
 /* operator associations and precedence */
 
-%right SPACES
+%start backlog
 
 %% /* language grammar */
 
 backlog
     : EOF
-    { return {tasks:[]};}
+    { return {tasks:[]}; }
     | task_list
     { return {tasks:$task_list}; }
     ;
 
 task_list
     : task_list task
-    { $$ = $task_list; $$.push($task);}
+    { $$ = $task_list; $$.push($task); }
     | task
-    { $$ = [$task];}
+    { $$ = [$task]; }
     ;
 
 task
     : task_content
-    { $$ = $1; }
-    | task_content EOL sub_task_list
+    | task_content sub_task_list
     {
         const srcTaskList = $sub_task_list;
         const dstTaskList = [];
@@ -68,18 +72,19 @@ task
             if(dstTaskList.length === 0){
                 dstTaskList.push(srcTaskList[i]);
             }else{
-               const parentIndex = findParentIndex(i);
-               if(parentIndex>=0){
-                   if(srcTaskList[parentIndex].children==null){
+                const parentIndex = findParentIndex(i);
+                if(parentIndex>=0){
+                    if(srcTaskList[parentIndex].children==null){
                        srcTaskList[parentIndex].children = [];
-                   }
-                   srcTaskList[parentIndex].children.push(srcTaskList[i]);
-               }else{
-                   dstTaskList.push(srcTaskList[i]);
-               }
+                    }
+                    srcTaskList[parentIndex].children.push(srcTaskList[i]);
+                }else{
+                    dstTaskList.push(srcTaskList[i]);
+                }
             }
         }
-        $$ = {...$task_description, children: dstTaskList};
+
+        $$ = {...$task_content, children: dstTaskList};
     }
     ;
 
@@ -92,7 +97,7 @@ sub_task_list
 
 sub_task
     : SPACES task_content
-    { $$ = $1 }
+    { $$ = $task_content }
     ;
 
 task_content
@@ -127,37 +132,47 @@ task_content
                 case "phase":
                     $$.phase = label.value;
                     break;
+                case "begin_end":
+                    console.log(label)
+                    if (label.value[0]) $$.begin = label.value[0];
+                    if (label.value[1]) $$.end = label.value[1];
+                    break;
             }
         }
     }
     | task_description label_list EOF
     {
-            $$ = {description: $task_description};
-            for(const label of $label_list){
-                switch(label.key){
-                    case "tag":
-                        if($$.tags == null) $$.tags = [];
-                        $$.tags.push(label.value);
-                        break;
-                    case "member":
-                        if($$.members == null) $$.members = [];
-                        $$.members.push(label.value);
-                        break;
-                    case "ddl":
-                        $$.ddl = label.value;
-                        break;
-                    case "begin":
-                        $$.begin = label.value;
-                        break;
-                    case "end":
-                        $$.end = label.value;
-                        break;
-                    case "phase":
-                        $$.phase = label.value;
-                        break;
-                }
+        $$ = {description: $task_description};
+        for(const label of $label_list){
+            switch(label.key){
+                case "tag":
+                    if($$.tags == null) $$.tags = [];
+                    $$.tags.push(label.value);
+                    break;
+                case "member":
+                    if($$.members == null) $$.members = [];
+                    $$.members.push(label.value);
+                    break;
+                case "ddl":
+                    $$.ddl = label.value;
+                    break;
+                case "begin":
+                    $$.begin = label.value;
+                    break;
+                case "end":
+                    $$.end = label.value;
+                    break;
+                case "phase":
+                    $$.phase = label.value;
+                    break;
+                case "begin_end":
+                    console.log(label)
+                    if (label.value[0]) $$.begin = label.value[0];
+                    if (label.value[1]) $$.end = label.value[1];
+                    break;
             }
         }
+    }
     | task_description label_list EOL EOF
     {
             $$ = {description: $task_description};
@@ -182,6 +197,11 @@ task_content
                         break;
                     case "phase":
                         $$.phase = label.value;
+                        break;
+                    case "begin_end":
+                        console.log(label)
+                        if (label.value[0]) $$.begin = label.value[0];
+                        if (label.value[1]) $$.end = label.value[1];
                         break;
                 }
             }
@@ -215,6 +235,8 @@ label
     { $$ = {key: "end", value: $1}; }
     | phase
     { $$ = {key: "phase", value: $1}; }
+    | begin_end
+    { $$ = {key: "begin_end", value: $1}; }
     ;
 
 tag
@@ -232,24 +254,18 @@ member
     ;
 
 ddl
-    : DDL_LABEL NON_SPACES
-    { $$ = $NON_SPACES; }
-    | DDL_LABEL NON_SPACES SPACES NON_SPACES
-    { $$ =  $2+$3+$4; }
+    : DDL_LABEL TIME
+    { $$ = $TIME; }
     ;
 
 begin
-    : BEGIN_LABEL NON_SPACES
-    { $$ = $NON_SPACES; }
-    | BEGIN_LABEL NON_SPACES SPACES NON_SPACES
-    { $$ =  $2+$3+$4; }
+    : BEGIN_LABEL TIME
+    { $$ = $TIME; }
     ;
 
 end
-    : END_LABEL NON_SPACES
-    { $$ = $NON_SPACES; }
-    | END_LABEL NON_SPACES SPACES NON_SPACES
-    { $$ =  $2+$3+$4; }
+    : END_LABEL TIME
+    { $$ = $TIME; }
     ;
 
 phase
@@ -257,4 +273,17 @@ phase
     { $$ = $NON_SPACES; }
     | PHASE_LABEL NON_SPACES SPACES NON_SPACES
     { $$ =  $2+$3+$4; }
+    ;
+
+begin_end
+    : BEGIN_END_LEFT_LABEL TIME BEGIN_END_RIGHT_LABEL
+    { $$ = [$2]; }
+    | BEGIN_END_LEFT_LABEL TIME COMMA BEGIN_END_RIGHT_LABEL
+    { $$ = [$2]; }
+    | BEGIN_END_LEFT_LABEL TIME COMMA SPACES BEGIN_END_RIGHT_LABEL
+    { $$ = [$2]; }
+    | BEGIN_END_LEFT_LABEL TIME COMMA TIME BEGIN_END_RIGHT_LABEL
+    { $$ = [$2, $4]; }
+    | BEGIN_END_LEFT_LABEL TIME COMMA SPACES TIME BEGIN_END_RIGHT_LABEL
+    { $$ = [$2, $5]; }
     ;
