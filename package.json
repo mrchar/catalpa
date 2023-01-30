@@ -1,7 +1,7 @@
 {
   "name": "backlog",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "A simple markup language for Backlog",
   "type": "module",
   "packageManager": "pnpm@7.25.0",
@@ -23,7 +23,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc && vite build",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
