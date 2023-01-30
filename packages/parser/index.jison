@@ -95,7 +95,8 @@ function parseLabels(labels){
 [ \t]+("phase:"|":")                                            { return 'PHASE_LABEL'; }
 [ \t]+"["                                                       { return 'BEGIN_END_LEFT_LABEL'; }
 "]"                                                             { return 'BEGIN_END_RIGHT_LABEL'; }
-[\d\/-]+                                                        { return 'DATE'; }
+(\d{2}|\d{4})\/\d{1,2}\/\d{1,2}                                 { return 'DATE'; }
+(\d{2}|\d{4})\-\d{1,2}\-\d{1,2}                                 { return 'DATE'; }
 ","                                                             { return 'COMMA'; }
 " "+                                                            { return 'INDENT'; }
 [ \t]+                                                          { return 'SPACES'; }
@@ -161,7 +162,7 @@ task_content
 
 task_description
     : NON_SPACES
-    { $$ = $NON_SPACES; /*NON_SPACES 不能只包含[\d\/-]，否则会被识别为DATE*/}
+    { $$ = $NON_SPACES; /*NON_SPACES 不能只包含DATE内容，否则会被识别为DATE*/}
     | NON_SPACES SPACES NON_SPACES
     { $$ =  $1+$2+$3}
     ;
