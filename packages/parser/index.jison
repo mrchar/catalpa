@@ -1,8 +1,6 @@
 /* description: A simple markup language for Backlog. */
 
 %{
-const backlog = {};
-
 /**
 * 根据子任务的缩进深度，处理子任务的从属关系
 */
@@ -87,6 +85,11 @@ function parseLabels(labels){
 %lex
 
 %%
+\-{3}                                                           { return 'FOREWORD_LABEL'; }
+"title:"                                                        { return 'FOREWORD_TITLE_LABEL'; }
+"tags:"                                                         { return 'FOREWORD_TAGS_LABEL'; }
+"members:"                                                      { return 'FOREWORD_MEMBERS_LABEL'; }
+"phases:"                                                       { return 'FOREWORD_PHASES_LABEL'; }
 [ \t]+("tag:"|"#")                                              { return 'TAG_LABEL'; }
 [ \t]+("member:"|"@")                                           { return 'MEMBER_LABEL'; }
 [ \t]+("ddl:"|"!")                                              { return 'DDL_LABEL'; }
@@ -114,9 +117,61 @@ function parseLabels(labels){
 
 backlog
     : EOF
-    { return backlog; }
+    { $$ = {}; return $$; }
+    | foreword
+    { $$ = $foreword; return $$; }
     | task_list
-    { backlog.tasks = $task_list; return backlog; }
+    { $$ = {}; $$.tasks = $task_list; return $$; }
+    | foreword task_list
+    { $$ = $foreword; $$.tasks = $task_list; return $$; }
+    ;
+
+foreword
+    : FOREWORD_LABEL EOL foreword_content FOREWORD_LABEL EOL
+    { $$ = $foreword_content; }
+    | FOREWORD_LABEL EOL foreword_content FOREWORD_LABEL EOF
+    { $$ = $foreword_content; }
+    | FOREWORD_LABEL EOL foreword_content FOREWORD_LABEL EOL EOF
+    { $$ = $foreword_content; }
+    ;
+
+foreword_content
+    : foreword_title
+    { $$ = {title:$foreword_title};}
+    | foreword_title foreword_tags
+    { $$ = {title:$foreword_title, tags: $foreword_tags};}
+    | foreword_title foreword_tags foreword_members
+    { $$ = {title:$foreword_title, tags: $foreword_tags, members: $foreword_members};}
+    | foreword_title foreword_tags foreword_members foreword_phases
+    { $$ = {title:$foreword_title, tags: $foreword_tags, members: $foreword_members, phases: $foreword_phases};}
+    ;
+
+foreword_title
+    : FOREWORD_TITLE_LABEL NON_SPACES EOL
+    { $$ = $NON_SPACES; }
+    | FOREWORD_TITLE_LABEL NON_SPACES SPACES NON_SPACES EOL
+    { $$ = $NON_SPACES1+$SPACES+$NON_SPACES2; }
+    ;
+
+foreword_tags
+    : FOREWORD_TAGS_LABEL NON_SPACES EOL
+    { $$ = $NON_SPACES.split(",").map(x=>x.trim()); }
+    | FOREWORD_TAGS_LABEL NON_SPACES SPACES NON_SPACES EOL
+    { $$ = ($NON_SPACES1+$SPACES+$NON_SPACES2).split(",").map(x=>x.trim()); }
+    ;
+
+foreword_members
+    : FOREWORD_MEMBERS_LABEL NON_SPACES EOL
+    { $$ = $NON_SPACES.split(",").map(x=>x.trim()); }
+    | FOREWORD_MEMBERS_LABEL NON_SPACES SPACES NON_SPACES EOL
+    { $$ = ($NON_SPACES1+$SPACES+$NON_SPACES2).split(",").map(x=>x.trim()); }
+    ;
+
+foreword_phases
+    : FOREWORD_PHASES_LABEL NON_SPACES EOL
+    { $$ = $NON_SPACES.split(",").map(x=>x.trim()); }
+    | FOREWORD_PHASES_LABEL NON_SPACES SPACES NON_SPACES EOL
+    { $$ = ($NON_SPACES1+$SPACES+$NON_SPACES2).split(",").map(x=>x.trim()); }
     ;
 
 task_list
