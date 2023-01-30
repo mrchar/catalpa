@@ -1,7 +1,7 @@
 {
   "name": "backlog",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A simple markup language for Backlog",
   "type": "module",
   "packageManager": "pnpm@7.25.0",
