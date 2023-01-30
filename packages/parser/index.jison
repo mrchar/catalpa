@@ -18,7 +18,7 @@
 [ \t]+":"                                   {return 'PHASE_LABEL';}
 [ \t]+"["                                   {return 'BEGIN_END_LEFT_LABEL';}
 "]"                                         {return 'BEGIN_END_RIGHT_LABEL';}
-(\d{2}|\d{4})\/(\d{1}|\d{1,2})\/(\d{1,2})   {return 'TIME';}
+(\d{2}|[1-9]\d{3})\/([1-9]|1[0-2])\/([1-9]|[1-2][0-9]|3[0-1])   {return 'DATE';}
 ","                                         {return 'COMMA';}
 [ \t]+                {return 'SPACES';}
 [^\s]+                {return 'NON_SPACES';}
@@ -254,18 +254,18 @@ member
     ;
 
 ddl
-    : DDL_LABEL TIME
-    { $$ = $TIME; }
+    : DDL_LABEL DATE
+    { $$ = $DATE; }
     ;
 
 begin
-    : BEGIN_LABEL TIME
-    { $$ = $TIME; }
+    : BEGIN_LABEL DATE
+    { $$ = $DATE; }
     ;
 
 end
-    : END_LABEL TIME
-    { $$ = $TIME; }
+    : END_LABEL DATE
+    { $$ = $DATE; }
     ;
 
 phase
@@ -276,14 +276,14 @@ phase
     ;
 
 begin_end
-    : BEGIN_END_LEFT_LABEL TIME BEGIN_END_RIGHT_LABEL
+    : BEGIN_END_LEFT_LABEL DATE BEGIN_END_RIGHT_LABEL
     { $$ = [$2]; }
-    | BEGIN_END_LEFT_LABEL TIME COMMA BEGIN_END_RIGHT_LABEL
+    | BEGIN_END_LEFT_LABEL DATE COMMA BEGIN_END_RIGHT_LABEL
     { $$ = [$2]; }
-    | BEGIN_END_LEFT_LABEL TIME COMMA SPACES BEGIN_END_RIGHT_LABEL
+    | BEGIN_END_LEFT_LABEL DATE COMMA SPACES BEGIN_END_RIGHT_LABEL
     { $$ = [$2]; }
-    | BEGIN_END_LEFT_LABEL TIME COMMA TIME BEGIN_END_RIGHT_LABEL
+    | BEGIN_END_LEFT_LABEL DATE COMMA DATE BEGIN_END_RIGHT_LABEL
     { $$ = [$2, $4]; }
-    | BEGIN_END_LEFT_LABEL TIME COMMA SPACES TIME BEGIN_END_RIGHT_LABEL
+    | BEGIN_END_LEFT_LABEL DATE COMMA SPACES DATE BEGIN_END_RIGHT_LABEL
     { $$ = [$2, $5]; }
     ;
