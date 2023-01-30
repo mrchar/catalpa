@@ -4,26 +4,21 @@
 %lex
 
 %%
-[ \t]+"tag:"                                {return 'TAG_LABEL';}
-[ \t]+"#"                                   {return 'TAG_LABEL';}
-[ \t]+"member:"                             {return 'MEMBER_LABEL';}
-[ \t]+"@"                                   {return 'MEMBER_LABEL';}
-[ \t]+"ddl:"                                {return 'DDL_LABEL';}
-[ \t]+"!"                                   {return 'DDL_LABEL';}
-[ \t]+"begin:"                              {return 'BEGIN_LABEL';}
-[ \t]+"^"                                   {return 'BEGIN_LABEL';}
-[ \t]+"end:"                                {return 'END_LABEL';}
-[ \t]+"$"                                   {return 'END_LABEL';}
-[ \t]+"phase:"                              {return 'PHASE_LABEL';}
-[ \t]+":"                                   {return 'PHASE_LABEL';}
+[ \t]+("tag:"|"#")                          {return 'TAG_LABEL';}
+[ \t]+("member:"|"@")                       {return 'MEMBER_LABEL';}
+[ \t]+("ddl:"|"!")                          {return 'DDL_LABEL';}
+[ \t]+("begin:"|"^")                        {return 'BEGIN_LABEL';}
+[ \t]+("end:"|"$")                          {return 'END_LABEL';}
+[ \t]+("phase:"|":")                        {return 'PHASE_LABEL';}
 [ \t]+"["                                   {return 'BEGIN_END_LEFT_LABEL';}
 "]"                                         {return 'BEGIN_END_RIGHT_LABEL';}
 (\d{2}|[1-9]\d{3})\/([1-9]|1[0-2])\/([1-9]|[1-2][0-9]|3[0-1])   {return 'DATE';}
 ","                                         {return 'COMMA';}
-[ \t]+                {return 'SPACES';}
-[^\s]+                {return 'NON_SPACES';}
-\n                    {return 'EOL';}
-<<EOF>>               {return 'EOF';}
+" "+                                        {return 'INDENT';}
+[ \t]+                                      {return 'SPACES';}
+[^\s]+                                      {return 'NON_SPACES';}
+\n                                          {return 'EOL';}
+<<EOF>>                                     {return 'EOF';}
 
 /lex
 
@@ -96,8 +91,8 @@ sub_task_list
     ;
 
 sub_task
-    : SPACES task_content
-    { $$ = $task_content }
+    : INDENT task_content
+    { $$ = {...$task_content, depth: $1.length}; }
     ;
 
 task_content
