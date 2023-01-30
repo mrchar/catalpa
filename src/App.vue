@@ -1,5 +1,10 @@
 <script lang="ts" setup>
-import BacklogEditor from "./components/BacklogEditor.vue"</script>
+import {useDark} from "@vueuse/core"
+import BacklogEditor from "./components/BacklogEditor.vue"
+
+const isDark = useDark()
+
+</script>
 
 <template>
   <div>

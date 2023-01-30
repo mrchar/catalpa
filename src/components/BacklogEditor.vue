@@ -4,6 +4,7 @@ import {Codemirror} from "vue-codemirror"
 import {json} from "@codemirror/lang-json"
 import {oneDark} from "@codemirror/theme-one-dark"
 import parser from "../../packages/parser/index.jison"
+import BacklogViewer from "./BacklogViewer.vue"
 
 const script = ref<string>(`---
 title:团队待办事项
@@ -34,9 +35,12 @@ const result = computed(() => {
   }
 })
 
+const showViewer = ref<boolean>(true)
+
 </script>
 
 <template>
+  <span>显示查看器 <el-switch v-model="showViewer"/></span>
   <div class="container">
     <codemirror
         v-model="script"
@@ -45,12 +49,15 @@ const result = computed(() => {
         :style="{width: '80em', height: '30em'}"
         placeholder="从这里开始编写Backlog..."
     />
-    <codemirror
-        v-if="result"
-        :model-value="result"
-        :extensions="[json(),oneDark]"
-        :style="{width: '80em', height: '30em'}"
-    />
+    <template v-if="result">
+      <backlog-viewer v-if="showViewer" :data="result" style="width: 80em; height: 30em"/>
+      <codemirror
+          v-if="!showViewer"
+          :model-value="result"
+          :extensions="[json(),oneDark]"
+          :style="{width: '80em', height: '30em'}"
+      />
+    </template>
     <codemirror
         v-else
         :model-value="error"
