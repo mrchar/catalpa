@@ -1,12 +1,13 @@
 import {label} from "./label"
 
-export interface task {
+export interface Task {
     description: string
-    tags: label[] | void
-    members: label[] | void
-    ddl: Date | void
-    begin: Date | void
-    end: Date | void
-    phase: label | void
-    children: task[] | void
+    tags?: label[]
+    members?: label[]
+    ddl?: Date
+    begin?: Date
+    end?: Date
+    phase?: label
+    depth?: number
+    children?: Task[]
 }
