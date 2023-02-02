@@ -3,7 +3,7 @@ import {computed, ref} from "vue"
 import {Codemirror} from "vue-codemirror"
 import {json} from "@codemirror/lang-json"
 import {oneDark} from "@codemirror/theme-one-dark"
-import parser from "../../packages/parser/index.jison"
+import parser from "../../packages/parser/new.jison"
 
 const props = defineProps({
   modelValue: {type: String, default: ""},
@@ -28,6 +28,7 @@ const result = computed(() => {
     return JSON.stringify(parsed, null, 2)
   } catch (e) {
     error.value = (e as Error).message
+    console.error((e as Error).message)
     return ""
   }
 })
@@ -45,7 +46,6 @@ const result = computed(() => {
               :style="{width: '50em', height: '30em'}"
               placeholder="从这里开始编写Backlog..."
           />
-          <el-alert v-if="error" :title="error" type="error"/>
         </div>
       </el-tab-pane>
       <el-tab-pane label="Json">
