@@ -1,10 +1,9 @@
-import {label} from "./label"
-import {task} from "./task"
+import {Label} from "./label"
 
 export interface backlog {
-    title: string | void
-    tags: label[] | void
-    members: label[] | void
-    phases: label[] | void
-    tasks: task[] | void
+    title?: string
+    tags?: string[] | Label[]
+    members?: string[] | Label[]
+    phases?: string[] | Label[]
+    tasks: string[] | Label[]
 }

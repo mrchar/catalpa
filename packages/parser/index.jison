@@ -2,6 +2,47 @@
 
 %{
 /**
+* 解析前言
+*/
+function parseForeword(propertyList){
+    const foreword = {};
+    for(const property of propertyList){
+        if(property.title ==="title"){
+            if(property.content.length > 0){
+                foreword.title = property.content[0].name;
+            }
+        }else{
+            const items = property.content.reduce((items, item)=>{
+                if(!items[item.name]){
+                    items[item.name] = item;
+                    return items;
+                }
+
+                // 如果没有别名，说明重复定义，直接返回
+                if(!item.alias){
+                    return items
+                }
+
+                if(!items[item.name].aliases) {
+                    items[item.name].aliases = [];
+                }
+
+                items[item.name].aliases.push(item.alias);
+                return items;
+            }, {});
+
+            foreword[property.title] = Object.values(items)
+                .map(item=>{
+                    return item.aliases?item:item.name
+                }
+            );
+        }
+    }
+
+    return foreword
+}
+
+/**
 * 根据子任务的缩进深度，处理子任务的从属关系
 */
 function sortSubTaskList(subTaskList){
@@ -43,135 +84,140 @@ function sortSubTaskList(subTaskList){
 }
 
 /**
-* 对标记列表进行归类处理
+* 解析标记列表
 */
-function parseLabels(labels){
-    const parsed = {}
-
-    for(const label of labels){
-        switch(label.key){
+function parseLabelList(labelList){
+    return labelList.reduce((labels, label)=>{
+        switch(label.type){
             case "tag":
-                if(parsed.tags == null) parsed.tags = [];
-                parsed.tags.push(label.value);
+                if (!labels.tags) labels.tags = [];
+                label = label.key === "tag" ? label.value : label
+                labels.tags.push(label);
                 break;
             case "member":
-                if(parsed.members == null) parsed.members = [];
-                parsed.members.push(label.value);
+                if (!labels.members) labels.members = [];
+                label = label.key === "member" ? label.value : label
+                labels.members.push(label);
                 break;
             case "ddl":
-                parsed.ddl = label.value;
-                break;
             case "begin":
-                parsed.begin = label.value;
-                break;
             case "end":
-                parsed.end = label.value;
-                break;
             case "phase":
-                parsed.phase = label.value;
+                labels[label.type] = label.value;
                 break;
-            case "begin_end":
-                if (label.value[0]) parsed.begin = label.value[0];
-                if (label.value[1]) parsed.end = label.value[1];
+            case "period":
+                if(labels.begin || labels.end) {
+                    throw new Error("begin or end cannot be used together with period")
+                };
+                labels.period = {begin:label.begin, end:label.end}
                 break;
+            default:
+                if(!labels.labels) labels.labels = {};
+                if(!labels.labels[label.key]) labels.labels[label.key] = [];
+                labels.labels[label.key].push(label.value);
         }
-    }
 
-    return parsed;
+        return labels;
+    },{});
 }
+
 %}
 
 /* lexical grammar */
 %lex
 
 %%
-\-{3}                                                           { return 'FOREWORD_LABEL'; }
-"title:"                                                        { return 'FOREWORD_TITLE_LABEL'; }
-"tags:"                                                         { return 'FOREWORD_TAGS_LABEL'; }
-"members:"                                                      { return 'FOREWORD_MEMBERS_LABEL'; }
-"phases:"                                                       { return 'FOREWORD_PHASES_LABEL'; }
-[ \t]+("tag:"|"#")                                              { return 'TAG_LABEL'; }
-[ \t]+("member:"|"@")                                           { return 'MEMBER_LABEL'; }
-[ \t]+("ddl:"|"!")                                              { return 'DDL_LABEL'; }
-[ \t]+("begin:"|"^")                                            { return 'BEGIN_LABEL'; }
-[ \t]+("end:"|"$")                                              { return 'END_LABEL'; }
-[ \t]+("phase:"|":")                                            { return 'PHASE_LABEL'; }
-[ \t]+"["                                                       { return 'BEGIN_END_LEFT_LABEL'; }
-"]"                                                             { return 'BEGIN_END_RIGHT_LABEL'; }
-(\d{2}|\d{4})\/\d{1,2}\/\d{1,2}                                 { return 'DATE'; }
-(\d{2}|\d{4})\-\d{1,2}\-\d{1,2}                                 { return 'DATE'; }
-","                                                             { return 'COMMA'; }
-" "+                                                            { return 'INDENT'; }
-[ \t]+                                                          { return 'SPACES'; }
-[^\s]+                                                          { return 'NON_SPACES'; }
-\n                                                              { return 'EOL'; }
-<<EOF>>                                                         { return 'EOF'; }
+\n/\n                                   { /* 跳过空白行 */ }
+\s+/\n                                  { /* 跳过行尾空白字符 */ }
+\-{3}/\n                                { console.debug('triple_dash'); return 'triple_dash'; }
+[^\s\:\,\-\>\#\@\!\^\$\[\]\"]+/\:       { console.debug('title'); return 'title'; }
+":"                                     { console.debug('colon'); return 'colon'; }
+","                                     { console.debug('comma'); return 'comma'; }
+"->"                                    { console.debug('arrow'); return 'arrow'; }
+" alias "                               { console.debug('alias'); return 'alias'; }
+[#@!^$]/[^\s\:\,\-\>\#\@\!\^\$\[\]\"]+  { console.debug('symbol'); return 'symbol'; }
+"["                                     { console.debug('period_prefix'); return 'period_prefix'; }
+"]"                                     { console.debug('period_suffix'); return 'period_suffix'; }
+" "+                                    { console.debug('spaces'); return 'spaces'; }
+[^\s\:\,\-\>\#\@\!\^\$\[\]\"]+          { console.debug('literal'); return 'literal'; }
+\".*\"                                  { console.debug('string'); return 'string'}
+\n                                      { console.debug('newline'); return 'newline'; }
+<<EOF>>                                 { console.debug('eof'); return 'eof'; }
 
 /lex
 
 /* operator associations and precedence */
 
-%start backlog
+%left newline
+%left spaces
+%start board
 
 %% /* language grammar */
 
-backlog
-    : EOF
-    { $$ = {}; return $$; }
-    | foreword
-    { $$ = $foreword; return $$; }
-    | task_list
-    { $$ = {}; $$.tasks = $task_list; return $$; }
-    | foreword task_list
-    { $$ = $foreword; $$.tasks = $task_list; return $$; }
+board
+    : final_line
+    { return {}; }
+    | foreword final_line
+    { return {...$foreword}; }
+    | task_list final_line
+    { return {tasks: $task_list}; }
+    | foreword task_list final_line
+    { return {...$foreword, tasks: $task_list}; }
+    ;
+
+final_line
+    : eof
+    | spaces eof
     ;
 
 foreword
-    : FOREWORD_LABEL EOL foreword_content FOREWORD_LABEL EOL
-    { $$ = $foreword_content; }
-    | FOREWORD_LABEL EOL foreword_content FOREWORD_LABEL EOF
-    { $$ = $foreword_content; }
-    | FOREWORD_LABEL EOL foreword_content FOREWORD_LABEL EOL EOF
-    { $$ = $foreword_content; }
+    : triple_dash newline triple_dash newline
+    { $$ = {}; }
+    | triple_dash newline property_list triple_dash newline
+    { $$ = parseForeword($property_list); }
     ;
 
-foreword_content
-    : foreword_title
-    { $$ = {title:$foreword_title};}
-    | foreword_title foreword_tags
-    { $$ = {title:$foreword_title, tags: $foreword_tags};}
-    | foreword_title foreword_tags foreword_members
-    { $$ = {title:$foreword_title, tags: $foreword_tags, members: $foreword_members};}
-    | foreword_title foreword_tags foreword_members foreword_phases
-    { $$ = {title:$foreword_title, tags: $foreword_tags, members: $foreword_members, phases: $foreword_phases};}
+property_list
+    : property_list property
+    { $$ = $property_list; $$.push($property); }
+    | property
+    { $$ = [$property]; }
     ;
 
-foreword_title
-    : FOREWORD_TITLE_LABEL NON_SPACES EOL
-    { $$ = $NON_SPACES; }
-    | FOREWORD_TITLE_LABEL NON_SPACES SPACES NON_SPACES EOL
-    { $$ = $NON_SPACES1+$SPACES+$NON_SPACES2; }
+property
+    : title colon item_list newline
+    {
+        $$ = {title: $title, content: $item_list};
+    }
     ;
 
-foreword_tags
-    : FOREWORD_TAGS_LABEL NON_SPACES EOL
-    { $$ = $NON_SPACES.split(",").map(x=>x.trim()); }
-    | FOREWORD_TAGS_LABEL NON_SPACES SPACES NON_SPACES EOL
-    { $$ = ($NON_SPACES1+$SPACES+$NON_SPACES2).split(",").map(x=>x.trim()); }
+item_list
+    : item_list comma item
+    { $$ = $item_list; $$.push($item); }
+    | item
+    { $$ = [$item]; }
     ;
 
-foreword_members
-    : FOREWORD_MEMBERS_LABEL NON_SPACES EOL
-    { $$ = $NON_SPACES.split(",").map(x=>x.trim()); }
-    | FOREWORD_MEMBERS_LABEL NON_SPACES SPACES NON_SPACES EOL
-    { $$ = ($NON_SPACES1+$SPACES+$NON_SPACES2).split(",").map(x=>x.trim()); }
+item
+    : item_content
+    { $$ = $item_content; }
+    | spaces item_content
+    { $$ = $item_content; }
     ;
 
-foreword_phases
-    : FOREWORD_PHASES_LABEL NON_SPACES EOL
-    { $$ = $NON_SPACES.split(",").map(x=>x.trim()); }
-    | FOREWORD_PHASES_LABEL NON_SPACES SPACES NON_SPACES EOL
-    { $$ = ($NON_SPACES1+$SPACES+$NON_SPACES2).split(",").map(x=>x.trim()); }
+item_content
+    : description
+    { $$ = {name: $description}; }
+    | description arrow description
+    { $$ = {name: $description1, alias: $description2}; }
+    | description spaces arrow description
+    { $$ = {name: $description1, alias: $description2}; }
+    | description arrow spaces description
+    { $$ = {name: $description1, alias: $description2}; }
+    | description spaces arrow spaces description
+    { $$ = {name: $description1, alias: $description2}; }
+    | description alias description
+    { $$ = {name: $description1, alias: $description2}; }
     ;
 
 task_list
@@ -182,115 +228,80 @@ task_list
     ;
 
 task
-    : task_content
+    : task_content newline
     { $$ = $task_content; }
-    | task_content sub_task_list
-    { $$ = $task_content; $$.children = sortSubTaskList($sub_task_list); }
+    | task_content newline subtask_list
+    { $$ = $task_content; $$.children = sortSubTaskList($subtask_list); }
     ;
 
-sub_task_list
-    : sub_task_list sub_task
-    { $$ = $sub_task_list; $$.push($sub_task); }
-    | sub_task
-    { $$ = [$sub_task]; }
+subtask_list
+    : subtask_list subtask
+    { $$ = $subtask_list; $$.push($subtask) }
+    | subtask
+    { $$ = [$subtask]; }
     ;
 
-sub_task
-    : INDENT task_content
-    { $$ = $task_content; $$.depth = $INDENT.length; }
+subtask
+    : spaces task_content newline
+    { $$ = $task_content; $$.depth = $spaces.length; }
     ;
 
 task_content
-    : task_description EOL
-    { $$ = {description: $task_description} }
-    | task_description EOF
-    { $$ = {description: $task_description} }
-    | task_description EOL EOF
-    { $$ = {description: $task_description} }
-    | task_description label_list EOL
-    { $$ = {description: $task_description, ...parseLabels($label_list)}; }
-    | task_description label_list EOF
-    { $$ = {description: $task_description, ...parseLabels($label_list)}; }
-    | task_description label_list EOL EOF
-    { $$ = {description: $task_description, ...parseLabels($label_list)}; }
-    ;
-
-task_description
-    : NON_SPACES
-    { $$ = $NON_SPACES; /*NON_SPACES 不能只包含DATE内容，否则会被识别为DATE*/}
-    | NON_SPACES SPACES NON_SPACES
-    { $$ =  $1+$2+$3}
+    : description
+    { $$ = {description: $description}; }
+    | description label_list
+    { $$ = {description: $description, ...parseLabelList($label_list)}; }
     ;
 
 label_list
-    : label_list label
-    { $$ = $label_list; $$.push($label); }
-    | label
+    : label_list spaces label
+    { $$ = $label_list; $$.push($label) }
+    | spaces label
     { $$ = [$label]; }
     ;
 
 label
-    : tag
-    { $$ = {key: "tag", value: $1}; }
-    | member
-    { $$ = {key: "member", value: $1}; }
-    | ddl
-    { $$ = {key: "ddl", value: $1}; }
-    | begin
-    { $$ = {key: "begin", value: $1}; }
-    | end
-    { $$ = {key: "end", value: $1}; }
-    | phase
-    { $$ = {key: "phase", value: $1}; }
-    | begin_end
-    { $$ = {key: "begin_end", value: $1}; }
+    : title colon description
+    {
+        $$ = {type: $title, key: $title, value: $description};
+    }
+    | colon description
+    { $$ = {type: "phase", key: $colon, value: $description}; }
+    | symbol description
+    {
+        $$ = {key: $symbol, value: $description};
+        switch($symbol){
+            case "#":
+                $$.type = "tag";
+                break;
+            case "@":
+                $$.type = "member";
+                break;
+            case "!":
+                $$.type = "ddl";
+                break;
+            case "^":
+                $$.type = "begin";
+                break;
+            case "$":
+                $$.type = "end";
+                break;
+        }
+    }
+    | period
+    { $$ = $period; }
     ;
 
-tag
-    : TAG_LABEL NON_SPACES
-    { $$ = $NON_SPACES; }
-    | TAG_LABEL NON_SPACES SPACES NON_SPACES
-    { $$ =  $2+$3+$4; }
+period
+    : period_prefix description comma description period_suffix
+    { $$ = {type:"period", begin: $description1, end: $description2}; }
+    | period_prefix description comma spaces description period_suffix
+    { $$ = {type:"period", begin: $description1, end: $description2}; }
     ;
 
-member
-    : MEMBER_LABEL NON_SPACES
-    { $$ = $NON_SPACES; }
-    | MEMBER_LABEL NON_SPACES SPACES NON_SPACES
-    { $$ =  $2+$3+$4; }
-    ;
-
-ddl
-    : DDL_LABEL DATE
-    { $$ = $DATE; }
-    ;
-
-begin
-    : BEGIN_LABEL DATE
-    { $$ = $DATE; }
-    ;
-
-end
-    : END_LABEL DATE
-    { $$ = $DATE; }
-    ;
-
-phase
-    : PHASE_LABEL NON_SPACES
-    { $$ = $NON_SPACES; }
-    | PHASE_LABEL NON_SPACES SPACES NON_SPACES
-    { $$ =  $2+$3+$4; }
-    ;
-
-begin_end
-    : BEGIN_END_LEFT_LABEL DATE BEGIN_END_RIGHT_LABEL
-    { $$ = [$DATE]; }
-    | BEGIN_END_LEFT_LABEL DATE COMMA BEGIN_END_RIGHT_LABEL
-    { $$ = [$DATE]; }
-    | BEGIN_END_LEFT_LABEL DATE COMMA SPACES BEGIN_END_RIGHT_LABEL
-    { $$ = [$DATE]; }
-    | BEGIN_END_LEFT_LABEL DATE COMMA DATE BEGIN_END_RIGHT_LABEL
-    { $$ = [$DATE1, $DATE2]; }
-    | BEGIN_END_LEFT_LABEL DATE COMMA SPACES DATE BEGIN_END_RIGHT_LABEL
-    { $$ = [$DATE1, $DATE2]; }
+description
+    : literal
+    { $$ = $literal; }
+    | string
+    { $$ = $string.substring(1, $string.length-1); }
     ;

@@ -1,27 +1,28 @@
 <script lang="ts" setup>
+import {ref} from "vue"
 import {useDark} from "@vueuse/core"
 import BacklogEditor from "./components/BacklogEditor.vue"
 import BacklogViewer from "./components/BacklogViewer.vue"
-import {ref} from "vue"
 
 const isDark = useDark()
 
 const script = ref<string>(`---
-title:团队待办事项
-tags:工作,游戏,计划,执行,检查,回顾,工作
-members:小王,小李,小周,小潘
-phases:Plan,Doing,Check,Action,Done
+title: title
+tags: tag1, tag2, tag1 -> tag3, tag2 alias tag4
+members: member1, member2, member1 alias name1
+phases: phase1, phase2, phase1 alias phase3
+labels: label1, label2
 ---
-周末组织团队到一个风景优美的地方转转                 tag:团建 tag:摄影 member:所有人 ddl:2023/1/15 begin:2023/1/12 phase:Plan
-    选择一个合适的目的地                          #计划 @小王 !2023/1/12 [2023/1/12,2023/1/12] :Done
-    计划出行的方式和路线                          #计划 #交通 @小王 !2023/1/13 ^2023/1/13 :Doing
-    整理出行要带的物品清单                        #计划 @小李 !2023/1/13 :Done
-    执行出行时间计划                             #计划 @小王 !2023/1/13
-        1.整理一个可行的时间表
-        2.通知所有人
-    行程中                                     #执行 @小周 !2023/1/15
-    返回后整理游玩的照片并分享给团队                #回顾 @Tim !2023/1/20
-第一季度绩效报告会议                              #会议 #里程碑 !2023/1/10 :Done`)
+main_task1                 tag:tag1 tag:tag2 member:all ddl:2023/1/15 begin:2023/1/12 phase:phase1
+    sub_task1              #tag1 @member1 !2023/1/12 [2023/1/12, 2023/1/12] :phase2
+    sub_task2              #tag1 #tag2 @member2 !2023/1/13 ^2023/1/13 :phase3
+    sub_task3              #tag1 @member1 !2023/1/13 :phase1
+    sub_task4              #tag1 @member1 !2023/1/13
+        1.sub_task4_1
+        2.sub_task4_2
+    sub_task5              #tag2 @zhou !2023/1/15
+    sub_task6              #tag2 @Tim !2023/1/20
+`)
 
 </script>
 

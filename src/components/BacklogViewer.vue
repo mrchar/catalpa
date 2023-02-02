@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {computed, defineProps} from "vue"
+import {computed} from "vue"
 import parser from "../../packages/parser/index.jison"
 
 const props = defineProps({value: {type: String, required: true}})
