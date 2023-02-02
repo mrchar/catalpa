@@ -7,7 +7,7 @@
 function parseForeword(propertyList){
     const foreword = {};
     for(const property of propertyList){
-        if(property.label ==="title"){
+        if(property.title ==="title"){
             if(property.content.length > 0){
                 foreword.title = property.content[0].name;
             }
@@ -31,7 +31,7 @@ function parseForeword(propertyList){
                 return items;
             }, {});
 
-            foreword[property.label] = Object.values(items)
+            foreword[property.title] = Object.values(items)
                 .map(item=>{
                     return item.aliases?item:item.name
                 }
@@ -82,6 +82,45 @@ function sortSubTaskList(subTaskList){
 
     return dstTaskList;
 }
+
+/**
+* 解析标记列表
+*/
+function parseLabelList(labelList){
+    return labelList.reduce((labels, label)=>{
+        switch(label.type){
+            case "tag":
+                if (!labels.tags) labels.tags = [];
+                label = label.key === "tag" ? label.value : label
+                labels.tags.push(label);
+                break;
+            case "member":
+                if (!labels.members) labels.members = [];
+                label = label.key === "member" ? label.value : label
+                labels.members.push(label);
+                break;
+            case "ddl":
+            case "begin":
+            case "end":
+            case "phase":
+                labels[label.type] = label.value;
+                break;
+            case "period":
+                if(labels.begin || labels.end) {
+                    throw new Error("begin or end cannot be used together with period")
+                };
+                labels.period = {begin:label.begin, end:label.end}
+                break;
+            default:
+                if(!labels.labels) labels.labels = {};
+                if(!labels.labels[label.key]) labels.labels[label.key] = [];
+                labels.labels[label.key].push(label.value);
+        }
+
+        return labels;
+    },{});
+}
+
 %}
 
 /* lexical grammar */
@@ -90,18 +129,20 @@ function sortSubTaskList(subTaskList){
 %%
 \n/\n                                   { /* 跳过空白行 */ }
 \s+/\n                                  { /* 跳过行尾空白字符 */ }
-\-{3}                                   { return 'triple_dash'; }
-":"                                     { return 'colon'; }
-","                                     { return 'comma'; }
-"->"                                    { return 'arrow'; }
-" alias "                               { return 'alias'; }
-[#@!^$]                                 { return 'symbol'; }
-"["                                     { return 'period_prefix'; }
-"]"                                     { return 'period_suffix'; }
-" "+                                    { return 'spaces'; }
-[^\s\:\-\>\,\[\]]+                      { return 'literal'; }
-\n                                      { return 'newline'; }
-<<EOF>>                                 { return 'eof'; }
+\-{3}/\n                                { console.debug('triple_dash'); return 'triple_dash'; }
+[^\s\:\,\-\>\#\@\!\^\$\[\]\"]+/\:       { console.debug('title'); return 'title'; }
+":"                                     { console.debug('colon'); return 'colon'; }
+","                                     { console.debug('comma'); return 'comma'; }
+"->"                                    { console.debug('arrow'); return 'arrow'; }
+" alias "                               { console.debug('alias'); return 'alias'; }
+[#@!^$]/[^\s\:\,\-\>\#\@\!\^\$\[\]\"]+  { console.debug('symbol'); return 'symbol'; }
+"["                                     { console.debug('period_prefix'); return 'period_prefix'; }
+"]"                                     { console.debug('period_suffix'); return 'period_suffix'; }
+" "+                                    { console.debug('spaces'); return 'spaces'; }
+[^\s\:\,\-\>\#\@\!\^\$\[\]\"]+          { console.debug('literal'); return 'literal'; }
+\".*\"                                  { console.debug('string'); return 'string'}
+\n                                      { console.debug('newline'); return 'newline'; }
+<<EOF>>                                 { console.debug('eof'); return 'eof'; }
 
 /lex
 
@@ -144,8 +185,10 @@ property_list
     ;
 
 property
-    : literal colon item_list newline
-    { $$ = {label: $literal, content: $item_list}; }
+    : title colon item_list newline
+    {
+        $$ = {title: $title, content: $item_list};
+    }
     ;
 
 item_list
@@ -163,18 +206,18 @@ item
     ;
 
 item_content
-    : literal
-    { $$ = {name: $literal}; }
-    | literal arrow literal
-    { $$ = {name: $literal1, alias: $literal2}; }
-    | literal spaces arrow literal
-    { $$ = {name: $literal1, alias: $literal2}; }
-    | literal arrow spaces literal
-    { $$ = {name: $literal1, alias: $literal2}; }
-    | literal spaces arrow spaces literal
-    { $$ = {name: $literal1, alias: $literal2}; }
-    | literal alias literal
-    { $$ = {name: $literal1, alias: $literal2}; }
+    : description
+    { $$ = {name: $description}; }
+    | description arrow description
+    { $$ = {name: $description1, alias: $description2}; }
+    | description spaces arrow description
+    { $$ = {name: $description1, alias: $description2}; }
+    | description arrow spaces description
+    { $$ = {name: $description1, alias: $description2}; }
+    | description spaces arrow spaces description
+    { $$ = {name: $description1, alias: $description2}; }
+    | description alias description
+    { $$ = {name: $description1, alias: $description2}; }
     ;
 
 task_list
@@ -207,42 +250,7 @@ task_content
     : description
     { $$ = {description: $description}; }
     | description label_list
-    {
-        const labels = $label_list.reduce((labels, label)=>{
-            switch(label.type){
-                case "tag":
-                    if (!labels.tags) labels.tags = [];
-                    label = label.key === "tag" ? label.value : label
-                    labels.tags.push(label);
-                    break;
-                case "member":
-                    if (!labels.members) labels.members = [];
-                    label = label.key === "member" ? label.value : label
-                    labels.members.push(label);
-                    break;
-                case "ddl":
-                case "begin":
-                case "end":
-                case "phase":
-                    labels[label.type] = label.value;
-                    break;
-                case "period":
-                    if(labels.begin || labels.end) {
-                        throw new Error("begin or end cannot be used together with period")
-                    };
-                    labels.period = {begin:label.begin, end:label.end}
-                    break;
-                default:
-                    if(!labels.labels) labels.labels = {};
-                    if(!labels.labels[label.key]) labels.labels[label.key] = [];
-                    labels.labels[label.key].push(label.value);
-            }
-
-            return labels;
-        },{});
-
-        $$ = {description: $description, ...labels};
-    }
+    { $$ = {description: $description, ...parseLabelList($label_list)}; }
     ;
 
 label_list
@@ -253,8 +261,10 @@ label_list
     ;
 
 label
-    : literal colon description
-    { $$ = {type: $literal, key: $literal, value: $description}; }
+    : title colon description
+    {
+        $$ = {type: $title, key: $title, value: $description};
+    }
     | colon description
     { $$ = {type: "phase", key: $colon, value: $description}; }
     | symbol description
@@ -292,4 +302,6 @@ period
 description
     : literal
     { $$ = $literal; }
+    | string
+    { $$ = $string.substring(1, $string.length-1); }
     ;
