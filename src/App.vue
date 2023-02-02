@@ -50,6 +50,10 @@ main_task1                 tag:tag1 tag:tag2 member:all ddl:2023/1/15 begin:2023
 .el-tabs.is-always-shadow {
   box-shadow: var(--el-box-shadow-light);
 }
+
+.el-tag + .el-tag {
+  margin-left: 4px;
+}
 </style>
 
 <style scoped>

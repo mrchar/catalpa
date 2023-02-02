@@ -21,20 +21,35 @@ const backlog = computed(() => {
   <el-card>
     <div class="container">
       <el-descriptions :title="backlog.title" :column="1">
-        <el-descriptions-item label="标签">{{ backlog.tags && backlog.tags.toString() }}</el-descriptions-item>
-        <el-descriptions-item label="成员">{{ backlog.members && backlog.members.toString() }}</el-descriptions-item>
-        <el-descriptions-item label="阶段">{{ backlog.phases && backlog.phases.toString() }}</el-descriptions-item>
+        <el-descriptions-item label="标签">
+          {{
+            backlog.tags && backlog.tags.map(item => item.name || item).toString()
+          }}
+        </el-descriptions-item>
+        <el-descriptions-item label="成员">
+          {{
+            backlog.members && backlog.members.map(item => item.name || item).toString()
+          }}
+        </el-descriptions-item>
+        <el-descriptions-item label="阶段">{{
+            backlog.phases && backlog.phases.map(item => item.name || item).toString()
+          }}
+        </el-descriptions-item>
       </el-descriptions>
       <el-table border stripe :data="backlog.tasks" row-key="description" default-expand-all height="100%">
         <el-table-column label="名称" prop="description" show-overflow-tooltip/>
         <el-table-column label="标签">
           <template v-slot="{row}">
-            <el-tag v-for="tag in row.tags">{{ tag }}</el-tag>
+            <el-tag v-for="tag in row.tags">
+              {{ tag.value || tag }}
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="成员">
           <template v-slot="{row}">
-            <el-tag v-for="member in row.members">@{{ member }}</el-tag>
+            <el-tag v-for="member in row.members">
+              @{{ member.value || member }}
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="截止日" prop="ddl"/>
