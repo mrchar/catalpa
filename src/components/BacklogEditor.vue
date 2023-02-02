@@ -3,7 +3,7 @@ import {computed, ref} from "vue"
 import {Codemirror} from "vue-codemirror"
 import {json} from "@codemirror/lang-json"
 import {oneDark} from "@codemirror/theme-one-dark"
-import parser from "../../packages/parser/new.jison"
+import parser from "../../packages/parser/index.jison"
 
 const props = defineProps({
   modelValue: {type: String, default: ""},
