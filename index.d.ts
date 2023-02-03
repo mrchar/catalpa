@@ -1,5 +1,5 @@
 declare module parser {
-    import {Board} from "./packages/backlog"
+    import {Board} from "./packages/catalpa"
 
     export function parse(script: string): Board
 }

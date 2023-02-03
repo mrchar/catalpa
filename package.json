@@ -1,25 +1,27 @@
 {
-  "name": "backlog",
+  "name": "catalpa",
   "private": true,
   "version": "0.2.0",
-  "description": "A simple markup language for Backlog",
+  "description": "A simple markup language for describe agility board.",
   "type": "module",
   "packageManager": "pnpm@7.25.0",
   "keywords": [
-    "backlog",
     "markdown",
-    "table"
+    "board",
+    "agile",
+    "markup",
+    "backlog"
   ],
   "files": [
     "dist",
     "index.d.ts"
   ],
-  "main": "./dist/backlog-parser.umd.cjs",
-  "module": "./dist/backlog-parser.js",
+  "main": "./dist/catalpa-parser.umd.cjs",
+  "module": "./dist/catalpa-parser.js",
   "exports": {
     "types": "./index.d.ts",
-    "import": "./dist/backlog-parser.js",
-    "require": "./dist/backlog-parser.umd.cjs"
+    "import": "./dist/catalpa-parser.js",
+    "require": "./dist/catalpa-parser.umd.cjs"
   },
   "scripts": {
     "dev": "vite",
