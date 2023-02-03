@@ -7,8 +7,8 @@ export {}
 
 declare module '@vue/runtime-core' {
   export interface GlobalComponents {
-    BacklogEditor: typeof import('./components/BacklogEditor.vue')['default']
-    BacklogViewer: typeof import('./components/BacklogViewer.vue')['default']
+    CatalpaEditor: typeof import('./components/CatalpaEditor.vue')['default']
+    CatalpaViewer: typeof import('./components/CatalpaViewer.vue')['default']
     ElCard: typeof import('element-plus/es')['ElCard']
     ElDescriptions: typeof import('element-plus/es')['ElDescriptions']
     ElDescriptionsItem: typeof import('element-plus/es')['ElDescriptionsItem']

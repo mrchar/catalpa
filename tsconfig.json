@@ -23,8 +23,8 @@
     "src/**/*.vue",
     "test/**/*.ts",
     "test/**/*.d.ts",
-    "packages/backlog/**/*.ts",
-    "packages/backlog/**/*.d.ts"
+    "packages/catalpa/**/*.ts",
+    "packages/catalpa/**/*.d.ts"
   ],
   "references": [
     {

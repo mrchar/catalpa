@@ -2,8 +2,8 @@
 import {defineAsyncComponent, ref} from "vue"
 import {useDark} from "@vueuse/core"
 
-const BacklogEditor = defineAsyncComponent(() => import("./components/BacklogEditor.vue"))
-const BacklogViewer = defineAsyncComponent(() => import("./components/BacklogViewer.vue"))
+const CatalpaEditor = defineAsyncComponent(() => import("./components/CatalpaEditor.vue"))
+const CatalpaViewer = defineAsyncComponent(() => import("./components/CatalpaViewer.vue"))
 
 const isDark = useDark()
 
@@ -29,8 +29,8 @@ main_task1                 tag:tag1 tag:tag2 member:all ddl:2023/1/15 begin:2023
 
 <template>
   <div class="container">
-    <backlog-editor v-model="script"/>
-    <backlog-viewer :value="script"/>
+    <catalpa-editor v-model="script"/>
+    <catalpa-viewer :value="script"/>
   </div>
 </template>
 

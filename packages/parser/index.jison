@@ -1,4 +1,4 @@
-/* description: A simple markup language for Backlog. */
+/* description: A simple markup language for describe agility board. */
 
 %{
 /**
@@ -103,8 +103,7 @@ function parseLabelList(labelList){
             case "begin":
             case "end":
             case "phase":
-                label = label.type === label.key ? label.value : label;
-                labels[label.type] = label;
+                labels[label.type] = label.type === label.key ? label.value : label;
                 break;
             case "period":
                 if(labels.begin || labels.end) {
@@ -268,9 +267,7 @@ label_list
 
 label
     : title colon description
-    {
-        $$ = {type: $title, key: $title, value: $description};
-    }
+    { $$ = {type: $title, key: $title, value: $description}; }
     | colon description
     { $$ = {type: "phase", key: $colon, value: $description}; }
     | symbol description

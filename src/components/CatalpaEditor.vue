@@ -46,7 +46,7 @@ const result = computed(() => {
               :autofocus="true"
               :extensions="[oneDark]"
               :style="{width: '50em', height: '30em'}"
-              placeholder="从这里开始编写Backlog..."
+              placeholder="从这里开始编写Catalpa..."
           />
         </div>
       </el-tab-pane>

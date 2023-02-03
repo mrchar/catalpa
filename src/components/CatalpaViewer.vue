@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import {computed} from "vue"
 import parser from "../../packages/parser/index.jison"
+import {Board} from "../../packages/catalpa"
 
 const props = defineProps({value: {type: String, required: true}})
 
@@ -8,7 +9,7 @@ const script = computed(() => {
   return props.value
 })
 
-const backlog = computed(() => {
+const board = computed<Board>(() => {
   try {
     return parser.parse(script.value)
   } catch (e) {
@@ -20,23 +21,32 @@ const backlog = computed(() => {
 <template>
   <el-card>
     <div class="container">
-      <el-descriptions :title="backlog.title" :column="1">
+      <el-descriptions :title="board.title" :column="1">
         <el-descriptions-item label="标签">
           {{
-            backlog.tags && backlog.tags.map(item => item.name || item).toString()
+            board.tags
+            && board.tags
+                .map(item => typeof item === "string" ? item : item.name)
+                .toString()
           }}
         </el-descriptions-item>
         <el-descriptions-item label="成员">
           {{
-            backlog.members && backlog.members.map(item => item.name || item).toString()
+            board.members
+            && board.members
+                .map(item => typeof item === "string" ? item : item.name)
+                .toString()
           }}
         </el-descriptions-item>
         <el-descriptions-item label="阶段">{{
-            backlog.phases && backlog.phases.map(item => item.name || item).toString()
+            board.phases
+            && board.phases
+                .map(item => typeof item === "string" ? item : item.name)
+                .toString()
           }}
         </el-descriptions-item>
       </el-descriptions>
-      <el-table border stripe :data="backlog.tasks" row-key="description" default-expand-all height="100%">
+      <el-table border stripe :data="board.tasks" row-key="description" default-expand-all height="100%">
         <el-table-column label="名称" prop="description" show-overflow-tooltip/>
         <el-table-column label="标签">
           <template v-slot="{row}">
@@ -52,8 +62,16 @@ const backlog = computed(() => {
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="截止日" prop="ddl"/>
-        <el-table-column label="状态" prop="phase"/>
+        <el-table-column label="截止日">
+          <template #default="{row}">
+            {{ row.ddl && row.ddl.value || row.ddl }}
+          </template>
+        </el-table-column>
+        <el-table-column label="状态">
+          <template #default="{row}">
+            {{ row.phase && row.phase.value || row.phase }}
+          </template>
+        </el-table-column>
       </el-table>
     </div>
   </el-card>

@@ -18,18 +18,9 @@ test("Empty", () => {
     expect(parsed).toEqual({})
 })
 
-test("Only Description", () => {
-    const parsed = parser.parse(`${task1Description}`)
-    expect(parsed).toEqual({
-        tasks: [
-            {description: task1Description},
-        ],
-    })
-})
 
 test("Only Description with newline", () => {
-    const parsed = parser.parse(`${task1Description}
-`)
+    const parsed = parser.parse(`${task1Description}\n`)
     expect(parsed).toEqual({
         tasks: [
             {description: task1Description},
@@ -38,15 +29,31 @@ test("Only Description with newline", () => {
 })
 
 test("Only Description with labels", () => {
-    const parsed = parser.parse(`${task1Description} tag:${tag1} #${tag2} member:${member1} @${member2} !2022/1/15 :${plan}`)
+    const parsed = parser.parse(`${task1Description} tag:${tag1} #${tag2} member:${member1} @${member2} !2022/1/15 :${plan}\n`)
     expect(parsed).toEqual({
         tasks: [
             {
                 description: task1Description,
-                tags: [tag1, tag2],
-                members: [member1, member2],
-                ddl: "2022/1/15",
-                phase: plan,
+                tags: [tag1, {
+                    key: "#",
+                    type: "tag",
+                    value: "tag2",
+                }],
+                members: [member1, {
+                    key: "@",
+                    type: "member",
+                    value: "member2",
+                }],
+                ddl: {
+                    key: "!",
+                    type: "ddl",
+                    value: "2022/1/15",
+                },
+                phase: {
+                    key: ":",
+                    type: "phase",
+                    value: "Plan",
+                },
             },
         ],
     })

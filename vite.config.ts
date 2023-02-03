@@ -17,7 +17,7 @@ export default defineConfig({
     plugins: [
         vue(),
         jison(),
-        shebang(), // 因为jslint时命令行程序，需要使用shebang插件处理成commonjs才能引入
+        shebang(), // 因为jslint是命令行程序，需要使用shebang插件处理成commonjs才能引入
         AutoImport({
             resolvers: [ElementPlusResolver()],
             dts: path.resolve(pathSrc, "auto-imports.d.ts"),
@@ -30,8 +30,8 @@ export default defineConfig({
     build: {
         lib: {
             entry: "./packages/parser/index.jison",
-            name: "BacklogParser",
-            fileName: "backlog-parser",
+            name: "CatalpaParser",
+            fileName: "catalpa-parser",
         },
     },
 })
