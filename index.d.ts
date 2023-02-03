@@ -1,3 +1,5 @@
 declare module parser {
-    export function parse(script: string): any
+    import {Board} from "./packages/backlog"
+
+    export function parse(script: string): Board
 }

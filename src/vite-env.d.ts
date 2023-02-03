@@ -1,6 +1,8 @@
 /// <reference types="vite/client" />
 declare module "*.jison" {
-    export function parse(script: string): object
+    import {Board} from "../packages/backlog"
+
+    export function parse(script: string): Board
 }
 
 declare module "jsonlint/lib/formatter" {
