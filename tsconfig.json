@@ -21,8 +21,10 @@
     "src/**/*.d.ts",
     "src/**/*.tsx",
     "src/**/*.vue",
-    "packages/**/*.ts",
-    "packages/**/*.d.ts"
+    "test/**/*.ts",
+    "test/**/*.d.ts",
+    "packages/backlog/**/*.ts",
+    "packages/backlog/**/*.d.ts"
   ],
   "references": [
     {

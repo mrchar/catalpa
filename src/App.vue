@@ -1,8 +1,9 @@
 <script lang="ts" setup>
-import {ref} from "vue"
+import {defineAsyncComponent, ref} from "vue"
 import {useDark} from "@vueuse/core"
-import BacklogEditor from "./components/BacklogEditor.vue"
-import BacklogViewer from "./components/BacklogViewer.vue"
+
+const BacklogEditor = defineAsyncComponent(() => import("./components/BacklogEditor.vue"))
+const BacklogViewer = defineAsyncComponent(() => import("./components/BacklogViewer.vue"))
 
 const isDark = useDark()
 
@@ -32,29 +33,6 @@ main_task1                 tag:tag1 tag:tag2 member:all ddl:2023/1/15 begin:2023
     <backlog-viewer :value="script"/>
   </div>
 </template>
-
-<style>
-.el-tabs {
-  border-radius: var(--el-border-radius-base);
-}
-
-.el-tabs__header {
-  border-top-left-radius: var(--el-border-radius-base);
-  border-top-right-radius: var(--el-border-radius-base);
-}
-
-.el-tabs__item#tab-0 {
-  border-top-left-radius: var(--el-border-radius-base);
-}
-
-.el-tabs.is-always-shadow {
-  box-shadow: var(--el-box-shadow-light);
-}
-
-.el-tag + .el-tag {
-  margin-left: 4px;
-}
-</style>
 
 <style scoped>
 div.container {

@@ -1,0 +1,1 @@
+export type {Board, Foreword, Property, Task, Label} from "./model"

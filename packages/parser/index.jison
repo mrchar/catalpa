@@ -91,19 +91,20 @@ function parseLabelList(labelList){
         switch(label.type){
             case "tag":
                 if (!labels.tags) labels.tags = [];
-                label = label.key === "tag" ? label.value : label
+                label = label.key === "tag" ? label.value : label;
                 labels.tags.push(label);
                 break;
             case "member":
                 if (!labels.members) labels.members = [];
-                label = label.key === "member" ? label.value : label
+                label = label.key === "member" ? label.value : label;
                 labels.members.push(label);
                 break;
             case "ddl":
             case "begin":
             case "end":
             case "phase":
-                labels[label.type] = label.value;
+                label = label.type === label.key ? label.value : label;
+                labels[label.type] = label;
                 break;
             case "period":
                 if(labels.begin || labels.end) {
@@ -150,19 +151,24 @@ function parseLabelList(labelList){
 
 %left newline
 %left spaces
-%start board
+%start expression
 
 %% /* language grammar */
 
+expression
+    : board
+    { console.log($board); return $board; }
+    ;
+
 board
     : final_line
-    { return {}; }
+    { $$ = {}; }
     | foreword final_line
-    { return {...$foreword}; }
+    { $$ = {...$foreword}; }
     | task_list final_line
-    { return {tasks: $task_list}; }
+    { $$ = {tasks: $task_list}; }
     | foreword task_list final_line
-    { return {...$foreword, tasks: $task_list}; }
+    { $$ = {...$foreword, tasks: $task_list}; }
     ;
 
 final_line
