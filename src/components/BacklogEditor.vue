@@ -4,6 +4,7 @@ import {Codemirror} from "vue-codemirror"
 import {json} from "@codemirror/lang-json"
 import {oneDark} from "@codemirror/theme-one-dark"
 import parser from "../../packages/parser/index.jison"
+import {formatter} from "jsonlint/lib/formatter"
 
 const props = defineProps({
   modelValue: {type: String, default: ""},
@@ -25,7 +26,8 @@ const error = ref<string>("")
 const result = computed(() => {
   try {
     const parsed = parser.parse(props.modelValue)
-    return JSON.stringify(parsed, null, 2)
+    const jsonString = JSON.stringify(parsed)
+    return formatter.formatJson(jsonString)
   } catch (e) {
     error.value = (e as Error).message
     console.error((e as Error).message)

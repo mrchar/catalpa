@@ -10,6 +10,7 @@ specifiers:
   codemirror: ^6.0.1
   element-plus: ^2.2.28
   jison: ^0.4.18
+  jsonlint: ^1.6.3
   postcss: ^8.4.21
   typescript: ^4.9.3
   unplugin-auto-import: ^0.12.1
@@ -27,6 +28,7 @@ dependencies:
   '@vueuse/core': 9.12.0_vue@3.2.45
   codemirror: 6.0.1
   element-plus: 2.2.28_vue@3.2.45
+  jsonlint: 1.6.3
   vue: 3.2.45
   vue-codemirror: 6.1.1_vhikcdkubtgbuxk47tdob2ofvi
 
@@ -672,7 +674,6 @@ packages:
 
   /JSV/4.0.2:
     resolution: {integrity: sha512-ZJ6wx9xaKJ3yFUhq5/sk82PJMuUyLk277I8mQeyDgCTjGdjWJIvPfaU5LIXaMuaN2UO1X3kZH4+lgphublZUHw==}
-    dev: true
 
   /acorn-walk/8.2.0:
     resolution: {integrity: sha512-k+iyHEuPgSw6SbuDpGQM+06HQUa04DZ3o+F6CSzXMvvI5KMvnaEqXe+YVe555R9nn6GPt404fos4wcgpw12SDA==}
@@ -851,7 +852,6 @@ packages:
   /colors/0.5.1:
     resolution: {integrity: sha512-XjsuUwpDeY98+yz959OlUK6m7mLBM+1MEG5oaenfuQnNnrQk1WvtcvFgN3FNDP3f2NmZ211t0mNEfSEN1h0eIg==}
     engines: {node: '>=0.1.90'}
-    dev: true
 
   /crelt/1.0.5:
     resolution: {integrity: sha512-+BO9wPPi+DWTDcNYhr/W90myha8ptzftZT+LwcmUbbok0rcP/fequmFYCw8NMoH7pkAZQzU78b3kYrlua5a9eA==}
@@ -1194,6 +1194,15 @@ packages:
       nomnom: 1.5.2
     dev: true
 
+  /jsonlint/1.6.3:
+    resolution: {integrity: sha512-jMVTMzP+7gU/IyC6hvKyWpUU8tmTkK5b3BPNuMI9U8Sit+YAWLlZwB6Y6YrdCxfg2kNz05p3XY3Bmm4m26Nv3A==}
+    engines: {node: '>= 0.6'}
+    hasBin: true
+    dependencies:
+      JSV: 4.0.2
+      nomnom: 1.5.2
+    dev: false
+
   /kolorist/1.6.0:
     resolution: {integrity: sha512-dLkz37Ab97HWMx9KTes3Tbi3D1ln9fCAy2zr2YVExJasDRPGRaKcoE4fycWNtnCAJfjFqe0cnY+f8KT2JePEXQ==}
     dev: true
@@ -1317,7 +1326,6 @@ packages:
     dependencies:
       colors: 0.5.1
       underscore: 1.1.7
-    dev: true
 
   /normalize-path/3.0.0:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
@@ -1620,7 +1628,6 @@ packages:
 
   /underscore/1.1.7:
     resolution: {integrity: sha512-w4QtCHoLBXw1mjofIDoMyexaEdWGMedWNDhlWTtT1V1lCRqi65Pnoygkh6+WRdr+Bm8ldkBNkNeCsXGMlQS9HQ==}
-    dev: true
 
   /unimport/1.2.0:
     resolution: {integrity: sha512-yMok/ubppurBE7Png1QH70Om96AxIoWCcfdxW3J/pziozShMc1UGpPgWpSckfo9ndAO5M74yNnRDdLAZy/gWQg==}
