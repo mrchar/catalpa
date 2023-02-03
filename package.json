@@ -44,6 +44,7 @@
     "autoprefixer": "^10.4.13",
     "jison": "^0.4.18",
     "postcss": "^8.4.21",
+    "rollup-plugin-preserve-shebang": "^1.0.1",
     "typescript": "^4.9.3",
     "unplugin-auto-import": "^0.12.1",
     "unplugin-icons": "^0.15.1",
